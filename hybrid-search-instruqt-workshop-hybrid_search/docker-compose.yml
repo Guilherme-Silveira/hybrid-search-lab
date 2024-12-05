@@ -1,0 +1,32 @@
+services:
+  api:
+    build:
+      context: ./app-api
+      dockerfile: Dockerfile
+    image: api_image:${BRANCH_NAME:-latest}
+    volumes:
+      - './app-api:/usr/src/app'
+    ports:
+      - 8000:8000
+    environment:
+      - ES_URL=https://meetup.es.southamerica-east1.gcp.elastic-cloud.com
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=changeme
+  client:
+    build:
+      context: ./app-ui
+      dockerfile: Dockerfile
+    image: client_image:${BRANCH_NAME:-latest}
+    volumes:
+      - './app-ui:/usr/src/app'
+    ports:
+      - 3000:3000
+    environment:
+      - NEXT_API_URL=http://api:8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/search/search-movies?q=book&hybrid=false&type=semantic&dataset=movies"]
+      interval: 2s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      - api
